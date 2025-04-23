@@ -56,15 +56,25 @@ class FolderWatcher(QtCore.QThread):
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, data: np.ndarray):
+    def __init__(self):
         super().__init__()
 
-        self.data = data
+        self.data = None
 
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
         self.toolbar = NavigationToolbar(self.canvas, self)
 
+        self.file_layout = QtWidgets.QHBoxLayout()
+        self.file_label = QtWidgets.QLabel("SEG-Y File:")
+        self.file_path = QtWidgets.QLineEdit()
+        self.file_path.setReadOnly(True)
+        self.browse_button = QtWidgets.QPushButton("Browse...")
+        self.browse_button.clicked.connect(self.browse_segy_file)
+
+        self.file_layout.addWidget(self.file_label)
+        self.file_layout.addWidget(self.file_path)
+        self.file_layout.addWidget(self.browse_button)
 
         self.button = QtWidgets.QPushButton('Plot')
         self.button.clicked.connect(self.plot)
@@ -75,6 +85,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
         layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(self.file_layout)
         layout.addWidget(self.toolbar)
         layout.addWidget(self.canvas)
         layout.addWidget(self.button)
@@ -117,6 +128,15 @@ class MainWindow(QtWidgets.QMainWindow):
             self.watcher.stop()
             print("Stopped watching folder")
 
+    def browse_segy_file(self):
+        file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Select SEG-Y File", os.getcwd()+ "/data", "SEG-Y Files (*.sgy *.segy *.SGY);;All Files (*)"
+        )
+        if file_path:
+            self.file_path.setText(file_path)
+            self.data = get_data_from_file(file_path)
+
+
 def get_data_from_file(file_path: str) -> np.ndarray:
     # Open the file directly with segyio
     with segyio.open(file_path, ignore_geometry=True) as f:
@@ -140,15 +160,6 @@ def show_data(data: np.ndarray) -> None:
     plt.tight_layout()
     plt.show()
 
-def show_data_qt(data: np.ndarray) -> None:
-    app = QtWidgets.QApplication([])
-
-    widget = MainWindow(data)
-    widget.resize(800, 600)
-    widget.show()
-
-    sys.exit(app.exec())
-
 def get_current_location() -> Tuple[float, float]:
     try:
         # ovde treba port (USB) na koji je uredjaj povezan i trebalo bi da radi
@@ -167,5 +178,10 @@ def get_current_location() -> Tuple[float, float]:
         return 0.0, 0.0
 
 if __name__ == "__main__":
-    sgy_data = get_data_from_file("data/20190413_233934.SGY")
-    show_data_qt(sgy_data)
+    app = QtWidgets.QApplication([])
+
+    widget = MainWindow()
+    widget.resize(800, 600)
+    widget.show()
+
+    sys.exit(app.exec())
