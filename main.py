@@ -7,7 +7,7 @@ import time
 import os
 
 from typing import Tuple
-from PySide6 import QtWidgets, QtCore, QtGui
+from PySide6 import QtWidgets, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
@@ -197,10 +197,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def process_new_file(self, file_path):
         self.file_path.setText(file_path)
         self.load_segy_file(file_path)
-        # Automatically plot the new data
         self.plot()
 
-        # Get GPS location if needed
         lat, lon = get_current_location()
         if lat != 0.0 and lon != 0.0:
             self.statusBar().showMessage(f"File: {os.path.basename(file_path)} | Location: {lat:.6f}, {lon:.6f}", 5000)
@@ -229,7 +227,6 @@ def show_data(data: np.ndarray) -> None:
 
 def get_current_location() -> Tuple[float, float]:
     try:
-        # ovde treba port (USB) na koji je uredjaj povezan i trebalo bi da radi
         ser = serial.Serial('/dev/pts/4', 9600)
         with gnssstreamer.GNSSStreamer(app=None, stream=ser) as streamer:
             data = streamer.get_coordinates()
